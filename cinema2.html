@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Theater Room</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Theater Main Frame Container */
+        #theater-container {
+            position: relative;
+            width: 1024px;
+            height: 576px;
+            background-image: url('cinema bg.png'); /* Image ka naam */
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 4px solid #222;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+
+        /* FIXED OVERLAY BOUNDS: Yeh video ko white frame ke andar lock rakhega */
+        #screen-overlay {
+            position: absolute;
+            top: 45px;         /* White screen ka top point */
+            left: 199px;        /* White screen ka left point */
+            width: 624px;       /* White screen ki exact width */
+            height: 263px;      /* White screen ki exact height */
+            background-color: #000;
+            overflow: hidden;   /* Isse koi bhi cheez box ke baahar nahi dikhegi */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* FIXED VIDEO TAG: Ab video baahar nahi bhaagegi */
+        video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: fill; /* Video ko poore white area me stretch karke fit karega */
+            border: none;
+            outline: none;
+        }
+
+        /* Leave Cinema Red Button */
+        #back-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: 2px solid #ff4d4d;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(255,0,0,0.5);
+        }
+
+        #back-btn:hover {
+            background: #dc3545;
+            box-shadow: 0 0 15px #ff4d4d;
+            transform: translateX(-50%) scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="theater-container">
+        
+        <div id="screen-overlay">
+            <video autoplay loop muted playsinline>
+                <source src="movie.mp4" type="video/mp4">
+                Aapka browser is video ko support nahi karta.
+            </video>
+        </div>
+<a href="file:///C:/Users/Administrator/Desktop/my%20game%2011/index.html.html" id="back-btn">EXIT</a>
+
+    </div>
+
+</body>
+</html>

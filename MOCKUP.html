@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art Gallery with Background Music & Exit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Image ko poore background par set karne ke liye */
+            background-image: url('MOCKUPBG.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: block; /* WeasyPrint layout compatibility */
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Buttons container ko niche center me rakhne ke liye */
+        .controls-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: auto;
+            white-space: nowrap;
+        }
+
+        /* Dono buttons ka common style */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin: 0 10px; /* Dono buttons ke beech me gap ke liye */
+            text-decoration: none; /* Exit link ke underline ko hatane ke liye */
+        }
+
+        .btn:hover {
+            background-color: #fff;
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        /* Exit button ke liye thoda alag color highlight (optional) */
+        .exit-btn:hover {
+            background-color: #ff4d4d;
+            border-color: #ff4d4d;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop autoplay>
+        <source src="music2.mp3" type="audio/mpeg">
+        Aapka browser audio support nahi karta hai.
+    </audio>
+
+    <div class="controls-container">
+        <button class="btn" id="musicBtn">🎵 Play Music</button>
+        
+        <a href="file:///C:/Users/Administrator/Desktop/my%20game%2011/index.html.html" class="btn exit-btn">🚪 Exit</a>
+    </div>
+
+    <script>
+        const music = document.getElementById('bgMusic');
+        const btn = document.getElementById('musicBtn');
+
+        // Music play/pause logic
+        btn.addEventListener('click', () => {
+            if (music.paused) {
+                music.play();
+                btn.innerHTML = "⏸️ Pause Music";
+            } else {
+                music.pause();
+                btn.innerHTML = "🎵 Play Music";
+            }
+        });
+
+        // Autoplay check
+        window.addEventListener('load', () => {
+            if (!music.paused) {
+                btn.innerHTML = "⏸️ Pause Music";
+            }
+        });
+    </script>
+
+</body>
+</html>

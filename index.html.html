@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Interactive Portfolio Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Game Container setup strictly based on your image layout */
+        #game-container {
+            position: relative;
+            width: 1024px;
+            height: 576px;
+            background-image: url('bg22.png'); /* Aapki image ka naam yahan aayega */
+            background-size: cover;
+            background-position: center;
+            border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            overflow: hidden;
+     }
+
+
+
+        /* Character Sprite Setup */
+
+        #character {
+
+            position: absolute;
+
+            width: 40px;
+
+            height: 85px;
+
+            background-color: #fce196; /* Image jesa yellow color */
+
+            border-radius: 20px;
+
+            bottom: 50px; /* Starting position on the road */
+
+            left: 490px;
+
+            transition: transform 0.1s linear;
+
+            z-index: 10;
+
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+        }
+
+
+
+        /* Character Head Element for better look */
+
+        #character::before {
+
+            content: '';
+
+            position: absolute;
+
+            top: -35px;
+
+            left: -5px;
+
+            width: 50px;
+
+            height: 50px;
+
+            background-color: #fce196;
+
+            border-radius: 50%;
+
+        }
+
+        /* Invisible Door Hitboxes (Trigger Zones) */
+        .door-trigger {
+            position: absolute;
+            /* border: 2px solid red; */ /* Testing ke liye border open kar sakte hain */
+            opacity: 0.7;
+            cursor: pointer;
+        }
+
+        #cinema-door {
+            width: 90px;
+            height: 150px;
+            bottom: 120px;
+            left: 120px;
+        }
+
+        #art-gallery-door {
+            width: 90px;
+            height: 130px;
+            bottom: 190px;
+            left: 470px;
+        }
+
+        #design-mockup-door {
+            width: 90px;
+            height: 150px;
+            bottom: 120px;
+            left: 810px;
+        }
+
+        /* Action Alert Prompt */
+        #action-prompt {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #00ffcc;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 2px solid #00ffcc;
+            font-weight: bold;
+            z-index: 20;
+            animation: blink 1s infinite alternate;
+            cursor: pointer;
+        }
+
+        @keyframes blink {
+            from { opacity: 0.8; }
+            to { opacity: 1; box-shadow: 0 0 10px #00ffcc; }
+        }
+
+        /* Instructions Info Overly */
+        #instructions {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">
+        <strong>Controls:</strong> Use Arrow Keys (← ↑ → ↓) to Move Character.
+    </div>
+
+    <div id="game-container">
+        <div id="character"></div>
+
+        <div id="cinema-door" class="door-trigger" data-room="Cinema Room"></div>
+        <div id="art-gallery-door" class="door-trigger" data-room="Art Gallery Room"></div>
+        <div id="design-mockup-door" class="door-trigger" data-room="Design Mockup Room"></div>
+
+        <div id="action-prompt" onclick="enterRoom()">Click to Enter Room</div>
+    </div>
+
+    <script>
+        const character = document.getElementById('character');
+        const container = document.getElementById('game-container');
+        const prompt = document.getElementById('action-prompt');
+
+        // Game State and initial coordinates
+        let charX = 490; 
+        let charY = 50;  // Bottom se distance
+        let charScale = 1; // Depth effect ke liye size dynamic karenge
+        const step = 8; // Movement speed
+        let currentActiveRoom = null;
+
+        // Doors coordinates configurations
+        const doors = [
+            { id: 'cinema-door', xMin: 100, xMax: 200, yMin: 100, yMax: 180, name: 'Cinema' },
+            { id: 'art-gallery-door', xMin: 440, xMax: 520, yMin: 180, yMax: 250, name: 'Art Gallery' },
+            { id: 'design-mockup-door', xMin: 760, xMax: 860, yMin: 100, yMax: 180, name: 'Design Mockup' }
+        ];
+
+        // Keyboard inputs tracking
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowLeft':
+                    if (charX > 40) charX -= step;
+                    break;
+                case 'ArrowRight':
+                    if (charX < 940) charX += step;
+                    break;
+                case 'ArrowUp':
+                    // Perspective limit (Road end tak ja sake)
+                    if (charY < 230) {
+                        charY += step;
+                        // Character upar jate huye chota dikhega (3D perspective effect)
+                        charScale = 1 - (charY / 400); 
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (charY > 20) {
+                        charY -= step;
+                        charScale = 1 - (charY / 400);
+                    }
+                    break;
+                case 'Enter':
+                    if(currentActiveRoom) enterRoom();
+                    break;
+            }
+            updateCharacterPosition();
+            checkCollisions();
+        });
+
+        // Update character visual representation
+        function updateCharacterPosition() {
+            character.style.left = charX + 'px';
+            character.style.bottom = charY + 'px';
+            character.style.transform = `scale(${charScale})`;
+        }
+
+        // Check if character is near any door
+        function checkCollisions() {
+            let nearDoor = false;
+
+            for (let door of doors) {
+                if (charX >= door.xMin && charX <= door.xMax && charY >= door.yMin && charY <= door.yMax) {
+                    prompt.style.display = 'block';
+                    prompt.innerText = `Press Enter or Click to Enter ${door.name}`;
+                    currentActiveRoom = door.name;
+                    nearDoor = true;
+                    break;
+                }
+            }
+
+            if (!nearDoor) {
+                prompt.style.display = 'none';
+                currentActiveRoom = null;
+            }
+        }
+
+        // Room change handler logic
+        function enterRoom() {
+            if (currentActiveRoom) {
+                alert(`Redirecting / Loading: ${currentActiveRoom}`);
+                
+                // Example redirection (Aap yahan apne link daal sakte hain):
+                if(currentActiveRoom === 'Cinema') {
+                      window.location.href = "cinema2.html"; 
+                } else if(currentActiveRoom === 'Art Gallery') {
+                    window.location.href = "ART2GALLERY.html";
+                } else if(currentActiveRoom === 'Design Mockup') {
+                      window.location.href = "MOCKUP.html";
+                }
+            }
+        }
+
+        // Initial trigger check
+        updateCharacterPosition();
+    </script>
+</body>
+</html>
