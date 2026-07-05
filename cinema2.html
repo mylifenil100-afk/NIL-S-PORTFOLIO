@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cinema Theater Room</title>
     <style>
         * {
@@ -21,38 +21,45 @@
             overflow: hidden;
         }
 
-        /* Theater Main Frame Container */
-        #theater-container {
+        /* Responsive Wrapper */
+        #theater-wrapper {
             position: relative;
             width: 1024px;
             height: 576px;
-            background-image: url('cinema bg.png'); /* Image ka naam */
+            transform-origin: center center;
+        }
+
+        /* Theater Main Frame Container */
+        #theater-container {
+            width: 100%;
+            height: 100%;
+            background-image: url('cinema bg.png'); 
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
             border: 4px solid #222;
             box-shadow: 0 0 50px rgba(0,0,0,1);
+            position: relative;
         }
 
-        /* FIXED OVERLAY BOUNDS: Yeh video ko white frame ke andar lock rakhega */
+        /* FIXED OVERLAY BOUNDS */
         #screen-overlay {
             position: absolute;
-            top: 45px;         /* White screen ka top point */
-            left: 199px;        /* White screen ka left point */
-            width: 624px;       /* White screen ki exact width */
-            height: 263px;      /* White screen ki exact height */
+            top: 7.81%;    /* Percentage based calculation for flexible scale */
+            left: 19.43%;  
+            width: 60.93%;  
+            height: 45.65%; 
             background-color: #000;
-            overflow: hidden;   /* Isse koi bhi cheez box ke baahar nahi dikhegi */
+            overflow: hidden;   
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* FIXED VIDEO TAG: Ab video baahar nahi bhaagegi */
         video {
             width: 100% !important;
             height: 100% !important;
-            object-fit: fill; /* Video ko poore white area me stretch karke fit karega */
+            object-fit: fill; 
             border: none;
             outline: none;
         }
@@ -86,17 +93,38 @@
 </head>
 <body>
 
-    <div id="theater-container">
-        
-        <div id="screen-overlay">
-            <video autoplay loop muted playsinline>
-                <source src="movie.mp4" type="video/mp4">
-                Aapka browser is video ko support nahi karta.
-            </video>
+    <div id="theater-wrapper">
+        <div id="theater-container">
+            <div id="screen-overlay">
+                <video autoplay loop muted playsinline>
+                    <source src="movie.mp4" type="video/mp4">
+                    Aapka browser is video ko support nahi karta.
+                </video>
+            </div>
+            <a href="index.html" id="back-btn">EXIT</a>
         </div>
-<a href="index.html" id="back-btn">EXIT</a>
-
     </div>
 
+    <script>
+        // Auto-scaling engine for mobile viewports
+        function resizeTheater() {
+            const wrapper = document.getElementById('theater-wrapper');
+            const targetWidth = 1024;
+            const targetHeight = 576;
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Calculate scale factors
+            const scaleX = windowWidth / targetWidth;
+            const scaleY = windowHeight / targetHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Clamp to maximum original scale of 1
+            
+            wrapper.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener('resize', resizeTheater);
+        window.addEventListener('load', resizeTheater);
+    </script>
 </body>
 </html>
