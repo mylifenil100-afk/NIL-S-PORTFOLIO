@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Interactive Portfolio Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Portfolio Game</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            user-select: none; /* Mobile par long press text selection rokne ke liye */
+            -webkit-user-select: none;
         }
 
         body {
@@ -21,75 +23,48 @@
             overflow: hidden;
         }
 
-        /* Game Container setup strictly based on your image layout */
+        /* Game Container setup based on your layout */
         #game-container {
             position: relative;
             width: 1024px;
             height: 576px;
-            background-image: url('bg22.png'); /* Aapki image ka naam yahan aayega */
+            background-image: url('bg22.png'); 
             background-size: cover;
             background-position: center;
             border: 4px solid #333;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             overflow: hidden;
-     }
-
-
+        }
 
         /* Character Sprite Setup */
-
         #character {
-
             position: absolute;
-
             width: 40px;
-
             height: 85px;
-
-            background-color: #fce196; /* Image jesa yellow color */
-
+            background-color: #fce196; 
             border-radius: 20px;
-
-            bottom: 50px; /* Starting position on the road */
-
+            bottom: 50px; 
             left: 490px;
-
-            transition: transform 0.1s linear;
-
+            transition: transform 0.05s linear; /* Smooth movement update */
             z-index: 10;
-
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-
         }
 
-
-
-        /* Character Head Element for better look */
-
+        /* Character Head Element */
         #character::before {
-
             content: '';
-
             position: absolute;
-
             top: -35px;
-
             left: -5px;
-
             width: 50px;
-
             height: 50px;
-
             background-color: #fce196;
-
             border-radius: 50%;
-
         }
 
-        /* Invisible Door Hitboxes (Trigger Zones) */
+        /* Invisible Door Hitboxes */
         .door-trigger {
             position: absolute;
-            /* border: 2px solid red; */ /* Testing ke liye border open kar sakte hain */
             opacity: 0.7;
             cursor: pointer;
         }
@@ -138,7 +113,7 @@
             to { opacity: 1; box-shadow: 0 0 10px #00ffcc; }
         }
 
-        /* Instructions Info Overly */
+        /* Instructions Info Overlay */
         #instructions {
             position: absolute;
             top: 15px;
@@ -151,12 +126,46 @@
             pointer-events: none;
             z-index: 20;
         }
+
+        /* --- MOBILE JOYSTICK CSS --- */
+        #joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            z-index: 30;
+            display: none; /* JavaScript se toggle hoga baseline media queries ke mutabik */
+            touch-action: none;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            touch-action: none;
+        }
+
+        /* Responsive Setup: Agar touch device detect hoti h toh joystick dikhega */
+        @media (max-width: 1024px) {
+            #joystick-container {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div id="instructions">
-        <strong>Controls:</strong> Use Arrow Keys (← ↑ → ↓) to Move Character.
+        <strong>Controls:</strong> Arrow Keys use karein ya Mobile Joystick drag karein.
     </div>
 
     <div id="game-container">
@@ -167,102 +176,165 @@
         <div id="design-mockup-door" class="door-trigger" data-room="Design Mockup Room"></div>
 
         <div id="action-prompt" onclick="enterRoom()">Click to Enter Room</div>
+
+        <div id="joystick-container">
+            <div id="joystick-knob"></div>
+        </div>
     </div>
 
     <script>
         const character = document.getElementById('character');
         const container = document.getElementById('game-container');
         const prompt = document.getElementById('action-prompt');
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickKnob = document.getElementById('joystick-knob');
 
-        // Game State and initial coordinates
+        // Game State
         let charX = 490; 
-        let charY = 50;  // Bottom se distance
-        let charScale = 1; // Depth effect ke liye size dynamic karenge
-        const step = 8; // Movement speed
+        let charY = 50;  
+        let charScale = 1; 
+        const step = 8; 
         let currentActiveRoom = null;
 
-        // Doors coordinates configurations
+        // Doors configurations
         const doors = [
             { id: 'cinema-door', xMin: 100, xMax: 200, yMin: 100, yMax: 180, name: 'Cinema' },
             { id: 'art-gallery-door', xMin: 440, xMax: 520, yMin: 180, yMax: 250, name: 'Art Gallery' },
             { id: 'design-mockup-door', xMin: 760, xMax: 860, yMin: 100, yMax: 180, name: 'Design Mockup' }
         ];
 
-        // Keyboard inputs tracking
+        // Key Press Controls (Keyboard)
         document.addEventListener('keydown', (e) => {
             switch(e.key) {
-                case 'ArrowLeft':
-                    if (charX > 40) charX -= step;
-                    break;
-                case 'ArrowRight':
-                    if (charX < 940) charX += step;
-                    break;
-                case 'ArrowUp':
-                    // Perspective limit (Road end tak ja sake)
-                    if (charY < 230) {
-                        charY += step;
-                        // Character upar jate huye chota dikhega (3D perspective effect)
-                        charScale = 1 - (charY / 400); 
-                    }
-                    break;
-                case 'ArrowDown':
-                    if (charY > 20) {
-                        charY -= step;
-                        charScale = 1 - (charY / 400);
-                    }
-                    break;
-                case 'Enter':
-                    if(currentActiveRoom) enterRoom();
-                    break;
+                case 'ArrowLeft':  moveCharacter(-step, 0); break;
+                case 'ArrowRight': moveCharacter(step, 0); break;
+                case 'ArrowUp':    moveCharacter(0, step); break;
+                case 'ArrowDown':  moveCharacter(0, -step); break;
+                case 'Enter':      if(currentActiveRoom) enterRoom(); break;
             }
-            updateCharacterPosition();
-            checkCollisions();
         });
 
-        // Update character visual representation
+        // Combined logic for character movement & boundaries
+        function moveCharacter(dx, dy) {
+            charX += dx;
+            charY += dy;
+
+            // Boundaries check
+            if (charX < 40) charX = 40;
+            if (charX > 940) charX = 940;
+            if (charY < 20) charY = 20;
+            if (charY > 230) charY = 230; // Perspective limit
+
+            // 3D Perspective Scaling Calculation
+            charScale = 1 - (charY / 400);
+
+            updateCharacterPosition();
+            checkCollisions();
+        }
+
         function updateCharacterPosition() {
             character.style.left = charX + 'px';
             character.style.bottom = charY + 'px';
             character.style.transform = `scale(${charScale})`;
         }
 
-        // Check if character is near any door
         function checkCollisions() {
             let nearDoor = false;
-
             for (let door of doors) {
                 if (charX >= door.xMin && charX <= door.xMax && charY >= door.yMin && charY <= door.yMax) {
                     prompt.style.display = 'block';
-                    prompt.innerText = `Press Enter or Click to Enter ${door.name}`;
+                    // Touch screens ke liye clear visibility text
+                    prompt.innerText = `Tap Here to Enter ${door.name}`;
                     currentActiveRoom = door.name;
                     nearDoor = true;
                     break;
                 }
             }
-
             if (!nearDoor) {
                 prompt.style.display = 'none';
                 currentActiveRoom = null;
             }
         }
 
-        // Room change handler logic
         function enterRoom() {
             if (currentActiveRoom) {
                 alert(`Redirecting / Loading: ${currentActiveRoom}`);
-                
-                // Example redirection (Aap yahan apne link daal sakte hain):
                 if(currentActiveRoom === 'Cinema') {
-                      window.location.href = "cinema2.html"; 
+                    window.location.href = "cinema2.html"; 
                 } else if(currentActiveRoom === 'Art Gallery') {
-                    window.location.href = "ART2GALLERY.HTML";
+                    window.location.href = "ART2GALLERY.html";
                 } else if(currentActiveRoom === 'Design Mockup') {
-                      window.location.href = "MOCKUP.html";
+                    window.location.href = "MOCKUP.html";
                 }
             }
         }
 
-        // Initial trigger check
+        // --- MOBILE JOYSTICK LOGIC ENGINE ---
+        let joystickActive = false;
+        let startX, startY;
+        const maxRadius = 40; // Max drag radius pixels mein
+        let gameLoopInterval = null;
+        let joyDX = 0, joyDY = 0; // Joystick directional vectors
+
+        joystickContainer.addEventListener('touchstart', (e) => {
+            joystickActive = true;
+            const touch = e.touches[0];
+            const rect = joystickContainer.getBoundingClientRect();
+            // Joystick ke center coordinates save karne ke liye
+            startX = rect.left + rect.width / 2;
+            startY = rect.top + rect.height / 2;
+
+            // Continuous movement handler start karne ke liye frame-loop engine
+            if(!gameLoopInterval) {
+                gameLoopInterval = setInterval(() => {
+                    if(joystickActive && (joyDX !== 0 || joyDY !== 0)) {
+                        // Delta variables multiply for precise speed control
+                        moveCharacter(joyDX * 6, joyDY * 6);
+                    }
+                }, 1000 / 60); // 60 FPS update loop
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!joystickActive) return;
+            const touch = e.touches[0];
+            
+            let deltaX = touch.clientX - startX;
+            let deltaY = touch.clientY - startY;
+            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Agar radius standard limit se jyada stretch ho to clamp handle karein
+            if (distance > maxRadius) {
+                deltaX = (deltaX / distance) * maxRadius;
+                deltaY = (deltaY / distance) * maxRadius;
+                distance = maxRadius;
+            }
+
+            // Knob style transition positioning update
+            joystickKnob.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+            // Directional normalize variables output ranges from -1 to 1
+            joyDX = deltaX / maxRadius;
+            joyDY = -(deltaY / maxRadius); // Inverted vector balance structure screen offsets ke liye
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            joystickActive = false;
+            joyDX = 0;
+            joyDY = 0;
+            joystickKnob.style.transform = 'translate(0px, 0px)'; // Center reset
+            if(gameLoopInterval) {
+                clearInterval(gameLoopInterval);
+                gameLoopInterval = null;
+            }
+        });
+
+        // Desktop testing check mechanism: Agar phone view par screen load ki hai tab dynamic look optimize karega
+        if ('ontouchstart' in window) {
+            joystickContainer.style.display = 'block';
+        }
+
+        // Initial setup execution
         updateCharacterPosition();
     </script>
 </body>
